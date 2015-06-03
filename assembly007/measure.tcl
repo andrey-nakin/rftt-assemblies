@@ -1,9 +1,11 @@
 #!/usr/bin/tclsh
 
 ###############################################################################
-# Измерительная установка № 007
-# Измерительный модуль
+# Measurement assembly # 7
+# Measurement module
 ###############################################################################
+
+package provide a007::measure 2.0.1
 
 package require math::statistics
 package require http 2.7
@@ -17,30 +19,29 @@ package require measure::listutils
 package require scpi
 
 ###############################################################################
-# Константы
+# \u041A\u043E\u043D\u0441\u0442\u0430\u043D\u0442\u044B
 ###############################################################################
 
 ###############################################################################
-# Подпрограммы
+# Entry point
 ###############################################################################
 
-# Подгружаем модель с процедурами общего назначения
-source [file join [file dirname [info script]] utils.tcl]
+package require a007::utils
                    
-# Производит регистрацию данных по заданному временному шагу
+# \u041F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044E \u0434\u0430\u043D\u043D\u044B\u0445 \u043F\u043E \u0437\u0430\u0434\u0430\u043D\u043D\u043E\u043C\u0443 \u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u043C\u0443 \u0448\u0430\u0433\u0443
 proc runTimeStep {} {
     global doMeasurement
     
     set step [measure::config::get prog.time.step 1000.0]
     
-    # Выполняем цикл пока не прервёт пользователь
+    # \u0412\u044B\u043F\u043E\u043B\u043D\u044F\u0435\u043C \u0446\u0438\u043A\u043B \u043F\u043E\u043A\u0430 \u043D\u0435 \u043F\u0440\u0435\u0440\u0432\u0451\u0442 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C
     while { ![measure::interop::isTerminated] } {
         set t1 [clock milliseconds]
         
-        # считываем температуру
+        # \u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443
         lassign [readTemp] temp tempErr tempDer
         
-        # регистрируем сопротивление
+        # \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435
         readResistanceAndWrite $temp $tempErr $tempDer 1 $doMeasurement
         
         set t2 [clock milliseconds]
@@ -50,7 +51,7 @@ proc runTimeStep {} {
     }
 }
 
-# Производит регистрацию данных по заданному температурному шагу
+# \u041F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044E \u0434\u0430\u043D\u043D\u044B\u0445 \u043F\u043E \u0437\u0430\u0434\u0430\u043D\u043D\u043E\u043C\u0443 \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u043D\u043E\u043C\u0443 \u0448\u0430\u0433\u0443
 set tempDerValues {}
 
 proc runTempStep {} {
@@ -66,12 +67,12 @@ proc runTempStep {} {
     set prevN [expr floor($temp / $step + 0.5)]
     set prevT [expr $prevN * $step]
     
-    # Выполняем цикл пока не прервёт пользователь
+    # \u0412\u044B\u043F\u043E\u043B\u043D\u044F\u0435\u043C \u0446\u0438\u043A\u043B \u043F\u043E\u043A\u0430 \u043D\u0435 \u043F\u0440\u0435\u0440\u0432\u0451\u0442 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C
     while { ![measure::interop::isTerminated] } {
-        # текущее время
+        # \u0442\u0435\u043A\u0443\u0449\u0435\u0435 \u0432\u0440\u0435\u043C\u044F
         set t [clock milliseconds]
     
-        # считываем температуру
+        # \u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443
         lassign [readTemp] temp tempErr tempDer
         measure::listutils::lappend tempDerValues $tempDer 10 
         
@@ -79,17 +80,17 @@ proc runTempStep {} {
             || $temp > $prevT && $temp > [expr ($prevN + 1) * $step]  \
             || $temp < $prevT && $temp < [expr ($prevN - 1) * $step] } {
 
-            # регистрируем сопротивление
+            # \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435
             readResistanceAndWrite $temp $tempErr $tempDer 1 $doMeasurement
             
             set prevT [expr floor($temp / $step + 0.5) * $step]
             set prevN [expr floor($temp / $step + 0.5)]
         } else {
-            # измеряем сопротивление, но не регистрируем
+            # \u0438\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435, \u043D\u043E \u043D\u0435 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C
             readResistanceAndWrite $temp $tempErr $tempDer 0
         } 
 
-        # определим, какую паузу нужно выдержать в зависимости от dT/dt
+        # \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u0438\u043C, \u043A\u0430\u043A\u0443\u044E \u043F\u0430\u0443\u0437\u0443 \u043D\u0443\u0436\u043D\u043E \u0432\u044B\u0434\u0435\u0440\u0436\u0430\u0442\u044C \u0432 \u0437\u0430\u0432\u0438\u0441\u0438\u043C\u043E\u0441\u0442\u0438 \u043E\u0442 dT/dt
         set der [math::statistics::mean $tempDerValues]
         set delay [expr 0.05 * $step / (abs($der) / 60000.0)]
         set delay [expr min($delay, 1000)]
@@ -102,16 +103,16 @@ proc runTempStep {} {
     }
 }
 
-# Производит регистрацию данных по командам оператора
+# \u041F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044E \u0434\u0430\u043D\u043D\u044B\u0445 \u043F\u043E \u043A\u043E\u043C\u0430\u043D\u0434\u0430\u043C \u043E\u043F\u0435\u0440\u0430\u0442\u043E\u0440\u0430
 proc runManual {} {
     global doMeasurement
 
-    # Выполняем цикл пока не прервёт пользователь
+    # \u0412\u044B\u043F\u043E\u043B\u043D\u044F\u0435\u043C \u0446\u0438\u043A\u043B \u043F\u043E\u043A\u0430 \u043D\u0435 \u043F\u0440\u0435\u0440\u0432\u0451\u0442 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C
     while { ![measure::interop::isTerminated] } {
-        # считываем температуру
+        # \u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443
         lassign [readTemp] temp tempErr tempDer
         
-        # регистрируем сопротивление
+        # \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435
         readResistanceAndWrite $temp $tempErr $tempDer $doMeasurement $doMeasurement
         
         after 500 set doMeasurement 0
@@ -121,17 +122,17 @@ proc runManual {} {
 }
 
 ###############################################################################
-# Обработчики событий
+# \u041E\u0431\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u0438 \u0441\u043E\u0431\u044B\u0442\u0438\u0439
 ###############################################################################
 
-# Команда прочитать последние настройки
+# \u041A\u043E\u043C\u0430\u043D\u0434\u0430 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438
 proc applySettings { lst } {
 	global settings
 
 	array set settings $lst
 }
 
-# Произвести очередное измерение
+# \u041F\u0440\u043E\u0438\u0437\u0432\u0435\u0441\u0442\u0438 \u043E\u0447\u0435\u0440\u0435\u0434\u043D\u043E\u0435 \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0435
 proc makeMeasurement {} {
     global doMeasurement
     
@@ -158,31 +159,31 @@ proc addComment { comment } {
 }
 
 ###############################################################################
-# Начало работы
+# \u041D\u0430\u0447\u0430\u043B\u043E \u0440\u0430\u0431\u043E\u0442\u044B
 ###############################################################################
 
-# Инициализируем протоколирование
+# \u0418\u043D\u0438\u0446\u0438\u0430\u043B\u0438\u0437\u0438\u0440\u0443\u0435\u043C \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435
 set log [measure::logger::init measure]
 
-# Эта команда будет вызвааться в случае преждевременной остановки потока
+# \u042D\u0442\u0430 \u043A\u043E\u043C\u0430\u043D\u0434\u0430 \u0431\u0443\u0434\u0435\u0442 \u0432\u044B\u0437\u0432\u0430\u0430\u0442\u044C\u0441\u044F \u0432 \u0441\u043B\u0443\u0447\u0430\u0435 \u043F\u0440\u0435\u0436\u0434\u0435\u0432\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0438 \u043F\u043E\u0442\u043E\u043A\u0430
 measure::interop::registerFinalization { finish }
 
-# Читаем настройки программы
+# \u0427\u0438\u0442\u0430\u0435\u043C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B
 measure::config::read
 
-# Проверяем правильность настроек
+# \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u043C \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A
 validateSettings
 
-# Производим подключение к устройствам и их настройку
+# \u041F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u043C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430\u043C \u0438 \u0438\u0445 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0443
 setup
 
-# Создаём файлы с результатами измерений
+# \u0421\u043E\u0437\u0434\u0430\u0451\u043C \u0444\u0430\u0439\u043B\u044B \u0441 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u0430\u043C\u0438 \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0439
 measure::datafile::create $settings(result.fileName) $settings(result.format) $settings(result.rewrite) {
 	"Date/Time" "T (K)" "+/- (K)" "dT/dt (K/min)" "I (mA)" "+/- (mA)" "U (mV)" "+/- (mV)" "R (Ohm)" "+/- (Ohm)" "Rho (Ohm*cm)" "+/- (Ohm*cm)" "Manual" "U polarity" "I polarity" 
 } "$settings(result.comment), [measure::measure::dutParams]"
 
 if { $settings(switch.voltage) || $settings(switch.current) } {
-    # в случае переполюсовок создадим ещё один файл с "очищенными" данными
+    # \u0432 \u0441\u043B\u0443\u0447\u0430\u0435 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043E\u043A \u0441\u043E\u0437\u0434\u0430\u0434\u0438\u043C \u0435\u0449\u0451 \u043E\u0434\u0438\u043D \u0444\u0430\u0439\u043B \u0441 "\u043E\u0447\u0438\u0449\u0435\u043D\u043D\u044B\u043C\u0438" \u0434\u0430\u043D\u043D\u044B\u043C\u0438
     measure::datafile::create [refinedFileName $settings(result.fileName)] $settings(result.format) $settings(result.rewrite) {
     	"Date/Time" "T (K)" "+/- (K)" "dT/dt (K/min)" "I (mA)" "+/- (mA)" "U (mV)" "+/- (mV)" "R (Ohm)" "+/- (Ohm)" "Rho (Ohm*cm)" "+/- (Ohm*cm)" 
     } "$settings(result.comment), [measure::measure::dutParams]"
@@ -193,10 +194,10 @@ measure::datafile::create $settings(trace.fileName) $settings(result.format) $se
 } "$settings(result.comment), [measure::measure::dutParams]"
 
 ###############################################################################
-# Основной цикл измерений
+# \u041E\u0441\u043D\u043E\u0432\u043D\u043E\u0439 \u0446\u0438\u043A\u043B \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0439
 ###############################################################################
 
-# Холостое измерение для "прогрева" мультиметров
+# \u0425\u043E\u043B\u043E\u0441\u0442\u043E\u0435 \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0435 \u0434\u043B\u044F "\u043F\u0440\u043E\u0433\u0440\u0435\u0432\u0430" \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440\u043E\u0432
 measure::measure::resistance -n 1
 readTemp
 
@@ -210,7 +211,7 @@ if { $settings(prog.method) == 0 } {
 }
 
 ###############################################################################
-# Завершение измерений
+# \u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u0435 \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0439
 ###############################################################################
 
 finish

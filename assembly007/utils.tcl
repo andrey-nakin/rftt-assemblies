@@ -1,9 +1,11 @@
 #!/usr/bin/tclsh
 
 ###############################################################################
-# Измерительная установка № 007
-# Процедуры общего назначения
+# Measurement assembly # 7
+# Common utils
 ###############################################################################
+
+package provide a007::utils 2.0.1
 
 package require hardware::agilent::mm34410a
 package require hardware::owen::mvu8
@@ -13,13 +15,13 @@ package require measure::math
 package require hardware::agilent::pse3645a
 package require hardware::owen::trm201
 
-# Число измерений, по которым определяется производная dT/dt
+# \u0427\u0438\u0441\u043B\u043E \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0439, \u043F\u043E \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u044F\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u043D\u0430\u044F dT/dt
 set DERIVATIVE_READINGS 10
 
-# Число точек, по которым экстраполируется измеряемая величина
+# \u0427\u0438\u0441\u043B\u043E \u0442\u043E\u0447\u0435\u043A, \u043F\u043E \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u044D\u043A\u0441\u0442\u0440\u0430\u043F\u043E\u043B\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0438\u0437\u043C\u0435\u0440\u044F\u0435\u043C\u0430\u044F \u0432\u0435\u043B\u0438\u0447\u0438\u043D\u0430
 set EXTRAPOL 2
 
-# Процедура проверяет правильность настроек, при необходимости вносит поправки
+# \u041F\u0440\u043E\u0446\u0435\u0434\u0443\u0440\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A, \u043F\u0440\u0438 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E\u0441\u0442\u0438 \u0432\u043D\u043E\u0441\u0438\u0442 \u043F\u043E\u043F\u0440\u0430\u0432\u043A\u0438
 proc validateSettings {} {
     measure::config::validate {
         result.fileName ""
@@ -39,15 +41,15 @@ proc validateSettings {} {
     }	
 }
 
-# Инициализация приборов
+# \u0418\u043D\u0438\u0446\u0438\u0430\u043B\u0438\u0437\u0430\u0446\u0438\u044F \u043F\u0440\u0438\u0431\u043E\u0440\u043E\u0432
 proc setup {} {
     global ps tcmm log trm connectors connectorIndex connectorStep vSwitches cSwitches tValues vValues cValues rValues
 
-    # Инициализация мультиметров на образце
+    # \u0418\u043D\u0438\u0446\u0438\u0430\u043B\u0438\u0437\u0430\u0446\u0438\u044F \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440\u043E\u0432 \u043D\u0430 \u043E\u0431\u0440\u0430\u0437\u0446\u0435
     measure::measure::setupMmsForResistance
 
     if { 3 != [measure::config::get current.method] && [measure::config::get ps.addr] != "" } {
-        # цепь запитывается при помощи управляемого ИП
+        # \u0446\u0435\u043F\u044C \u0437\u0430\u043F\u0438\u0442\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u043F\u0440\u0438 \u043F\u043E\u043C\u043E\u0449\u0438 \u0443\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u043C\u043E\u0433\u043E \u0418\u041F
         set ps [hardware::agilent::pse3645a::open \
     		-baud [measure::config::get ps.baud] \
     		-parity [measure::config::get ps.parity] \
@@ -55,22 +57,22 @@ proc setup {} {
     		[measure::config::get -required ps.addr] \
     	]
     
-        # Иниализируем и опрашиваем ИП
+        # \u0418\u043D\u0438\u0430\u043B\u0438\u0437\u0438\u0440\u0443\u0435\u043C \u0438 \u043E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u043C \u0418\u041F
         hardware::agilent::pse3645a::init $ps
     
-    	# Работаем в области бОльших напряжений
+    	# \u0420\u0430\u0431\u043E\u0442\u0430\u0435\u043C \u0432 \u043E\u0431\u043B\u0430\u0441\u0442\u0438 \u0431\u041E\u043B\u044C\u0448\u0438\u0445 \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0439
         scpi::cmd $ps "VOLTAGE:RANGE HIGH"
         
-    	# Задаём пределы по напряжению и току
+    	# \u0417\u0430\u0434\u0430\u0451\u043C \u043F\u0440\u0435\u0434\u0435\u043B\u044B \u043F\u043E \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u044E \u0438 \u0442\u043E\u043A\u0443
         scpi::cmd $ps "APPLY 60.000,[expr 0.001 * [measure::config::get current.manual.current]]"
         
-        # включаем подачу напряжения на выходы ИП
+        # \u0432\u043A\u043B\u044E\u0447\u0430\u0435\u043C \u043F\u043E\u0434\u0430\u0447\u0443 \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u044F \u043D\u0430 \u0432\u044B\u0445\u043E\u0434\u044B \u0418\u041F
         hardware::agilent::pse3645a::setOutput $ps 1
     }
     
     if { 0 == [measure::config::get tc.method 0]} {
-        # Инициализация мультиметра на термопаре
-        # Подключаемся к мультиметру (ММ)
+        # \u0418\u043D\u0438\u0446\u0438\u0430\u043B\u0438\u0437\u0430\u0446\u0438\u044F \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440\u0430 \u043D\u0430 \u0442\u0435\u0440\u043C\u043E\u043F\u0430\u0440\u0435
+        # \u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0430\u0435\u043C\u0441\u044F \u043A \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440\u0443 (\u041C\u041C)
         set tcmm [hardware::agilent::mm34410a::open \
     		-baud [measure::config::get tcmm.baud] \
     		-parity [measure::config::get tcmm.parity] \
@@ -78,10 +80,10 @@ proc setup {} {
     		[measure::config::get -required tcmm.addr] \
     	]
     
-        # Иниализируем и опрашиваем ММ
+        # \u0418\u043D\u0438\u0430\u043B\u0438\u0437\u0438\u0440\u0443\u0435\u043C \u0438 \u043E\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u0435\u043C \u041C\u041C
         hardware::agilent::mm34410a::init $tcmm
     
-    	# Настраиваем мультиметр для измерения постоянного напряжения на термопаре
+    	# \u041D\u0430\u0441\u0442\u0440\u0430\u0438\u0432\u0430\u0435\u043C \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440 \u0434\u043B\u044F \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u044F \u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u043E\u0433\u043E \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u044F \u043D\u0430 \u0442\u0435\u0440\u043C\u043E\u043F\u0430\u0440\u0435
     	hardware::agilent::mm34410a::configureDcVoltage \
     		-nplc [measure::config::get tcmm.nplc 10] \
     		-text2 "MM3 TC" \
@@ -89,7 +91,7 @@ proc setup {} {
     } else {
         set trm [::hardware::owen::trm201::init [measure::config::get tcm.serialAddr] [measure::config::get tcm.rs485Addr]]
     
-        # Настраиваем ТРМ-201 для измерения температуры
+        # \u041D\u0430\u0441\u0442\u0440\u0430\u0438\u0432\u0430\u0435\u043C \u0422\u0420\u041C-201 \u0434\u043B\u044F \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u044F \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u044B
         ::hardware::owen::trm201::setTcType $trm [measure::config::get tc.type] 
     }
 
@@ -97,20 +99,20 @@ proc setup {} {
     set vSwitches { 0 }
     set cSwitches { 0 }
     if { 0 != [measure::config::get switch.voltage 0]} {
-        # переполюсовка по напряжению
-    	# Инверсное подключение вольтметра
+        # \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0430 \u043F\u043E \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u044E
+    	# \u0418\u043D\u0432\u0435\u0440\u0441\u043D\u043E\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u0432\u043E\u043B\u044C\u0442\u043C\u0435\u0442\u0440\u0430
     	lappend connectors {1000 1000 0 0}
         lappend vSwitches { 1 } 
         lappend cSwitches { 0 } 
     }
     if { 0 != [measure::config::get switch.current 0]} {
-        # переполюсовка по току
-    	# Инверсное подключение источника тока
+        # \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0430 \u043F\u043E \u0442\u043E\u043A\u0443
+    	# \u0418\u043D\u0432\u0435\u0440\u0441\u043D\u043E\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430 \u0442\u043E\u043A\u0430
     	lappend connectors { 0 0 1000 1000 }
         lappend vSwitches { 0 } 
         lappend cSwitches { 1 } 
         if { 0 != [measure::config::get switch.voltage 0]} {
-    		# Инверсное подключение вольтметра и источника тока
+    		# \u0418\u043D\u0432\u0435\u0440\u0441\u043D\u043E\u0435 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u0432\u043E\u043B\u044C\u0442\u043C\u0435\u0442\u0440\u0430 \u0438 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430 \u0442\u043E\u043A\u0430
     		lappend connectors { 1000 1000 1000 1000 } 
             lappend vSwitches { 1 } 
             lappend cSwitches { 1 } 
@@ -124,54 +126,54 @@ proc setup {} {
     set rValues {}
 }
 
-# Завершаем работу установки, матчасть в исходное.
+# \u0417\u0430\u0432\u0435\u0440\u0448\u0430\u0435\u043C \u0440\u0430\u0431\u043E\u0442\u0443 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0438, \u043C\u0430\u0442\u0447\u0430\u0441\u0442\u044C \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0435.
 proc finish {} {
     global mm cmm tcmm ps log trm
 
     if { [info exists mm] } {
-    	# Переводим вольтметр в исходный режим
+    	# \u041F\u0435\u0440\u0435\u0432\u043E\u0434\u0438\u043C \u0432\u043E\u043B\u044C\u0442\u043C\u0435\u0442\u0440 \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C
     	hardware::agilent::mm34410a::done $mm
     	close $mm
     	unset mm
     }
 
     if { [info exists cmm] } {
-    	# Переводим амперметр в исходный режим
+    	# \u041F\u0435\u0440\u0435\u0432\u043E\u0434\u0438\u043C \u0430\u043C\u043F\u0435\u0440\u043C\u0435\u0442\u0440 \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C
     	hardware::agilent::mm34410a::done $cmm
     	close $cmm
     	unset cmm
     }
 	
     if { [info exists ps] } {
-    	# Переводим ИП в исходный режим
+    	# \u041F\u0435\u0440\u0435\u0432\u043E\u0434\u0438\u043C \u0418\u041F \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C
     	hardware::agilent::pse3645a::done $ps
     	close $ps
     	unset ps
     }
     
     if { [info exists tcmm] } {
-    	# Переводим мультиметр в исходный режим
+    	# \u041F\u0435\u0440\u0435\u0432\u043E\u0434\u0438\u043C \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440 \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C
     	hardware::agilent::mm34410a::done $tcmm
     	close $tcmm
     	unset tcmm
     }
     
     if { [info exists trm] } {
-        # Переводим ТРМ-201 в исходное состояние
+        # \u041F\u0435\u0440\u0435\u0432\u043E\u0434\u0438\u043C \u0422\u0420\u041C-201 \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0435 \u0441\u043E\u0441\u0442\u043E\u044F\u043D\u0438\u0435
         ::hardware::owen::trm201::done $trm
         unset trm
     }
     
-	# реле в исходное
+	# \u0440\u0435\u043B\u0435 \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0435
 	resetConnectors
 	
-	# выдержим паузу
+	# \u0432\u044B\u0434\u0435\u0440\u0436\u0438\u043C \u043F\u0430\u0443\u0437\u0443
 	after 1000
 }
 
 proc display { v sv c sc r sr temp tempErr tempDer write } {
 	if { [measure::interop::isAlone] } {
-	    # Выводим результаты в консоль
+	    # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043A\u043E\u043D\u0441\u043E\u043B\u044C
     	set cv [::measure::format::valueWithErr -mult 1.0e-3 $c $sc A]
     	set vv [::measure::format::valueWithErr -mult 1.0e-3 $v $sv V]
     	set rv [::measure::format::valueWithErr $r $sr "\u03A9"]
@@ -179,7 +181,7 @@ proc display { v sv c sc r sr temp tempErr tempDer write } {
     	set tv [::measure::format::valueWithErr $temp $tempErr K]
     	puts "C=$cv\tV=$vv\tR=$rv\tP=$pw\tT=$tv"
 	} else {
-	    # Выводим результаты в окно программы
+	    # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043E\u043A\u043D\u043E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B
         measure::interop::cmd [list display $v $sv $c $sc $r $sr $temp $tempErr $tempDer $write]
 	}
 }
@@ -188,7 +190,7 @@ set tempValues [list]
 set timeValues [list]
 set startTime [clock milliseconds]
 
-# Измеряем температуру и возвращаем вместе с инструментальной погрешностью и производной
+# \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443 \u0438 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u043C \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u043E\u0439 \u043F\u043E\u0433\u0440\u0435\u0448\u043D\u043E\u0441\u0442\u044C\u044E \u0438 \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u043D\u043E\u0439
 proc readTemp {} {
     global tempValues timeValues startTime DERIVATIVE_READINGS
     
@@ -198,7 +200,7 @@ proc readTemp {} {
         lassign [readTempTrm] t tErr
     }
 
-    # накапливаем значения в очереди для вычисления производной 
+    # \u043D\u0430\u043A\u0430\u043F\u043B\u0438\u0432\u0430\u0435\u043C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F \u0432 \u043E\u0447\u0435\u0440\u0435\u0434\u0438 \u0434\u043B\u044F \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u044F \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u043D\u043E\u0439 
     measure::listutils::lappend tempValues $t $DERIVATIVE_READINGS
     measure::listutils::lappend timeValues [expr [clock milliseconds] - $startTime] $DERIVATIVE_READINGS
     if { [llength $tempValues] < $DERIVATIVE_READINGS } {
@@ -210,28 +212,28 @@ proc readTemp {} {
     return [list $t $tErr $der]
 }
 
-# Снимаем показания вольтметра на термопаре и возвращаем температуру 
-# вместе с инструментальной погрешностью
+# \u0421\u043D\u0438\u043C\u0430\u0435\u043C \u043F\u043E\u043A\u0430\u0437\u0430\u043D\u0438\u044F \u0432\u043E\u043B\u044C\u0442\u043C\u0435\u0442\u0440\u0430 \u043D\u0430 \u0442\u0435\u0440\u043C\u043E\u043F\u0430\u0440\u0435 \u0438 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443 
+# \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u043E\u0439 \u043F\u043E\u0433\u0440\u0435\u0448\u043D\u043E\u0441\u0442\u044C\u044E
 proc readTempTrm {} {
     global trm
     return [::hardware::owen::trm201::readTemperature $trm]
 }
 
-# Снимаем показания вольтметра на термопаре и возвращаем температуру 
-# вместе с инструментальной погрешностью
+# \u0421\u043D\u0438\u043C\u0430\u0435\u043C \u043F\u043E\u043A\u0430\u0437\u0430\u043D\u0438\u044F \u0432\u043E\u043B\u044C\u0442\u043C\u0435\u0442\u0440\u0430 \u043D\u0430 \u0442\u0435\u0440\u043C\u043E\u043F\u0430\u0440\u0435 \u0438 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443 
+# \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u043E\u0439 \u043F\u043E\u0433\u0440\u0435\u0448\u043D\u043E\u0441\u0442\u044C\u044E
 proc readTempMm {} {
     global tcmm
     global log
 
-    # измеряем напряжение на термопаре    
+    # \u0438\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u043D\u0430 \u0442\u0435\u0440\u043C\u043E\u043F\u0430\u0440\u0435    
     set v [string trim [scpi::query $tcmm "READ?"]]
     if { [measure::config::get tc.negate 0] } {
         set v [expr -1.0 * $v]
     }
-	# инструментальная погрешность
+	# \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u0430\u044F \u043F\u043E\u0433\u0440\u0435\u0448\u043D\u043E\u0441\u0442\u044C
    	set vErr [hardware::agilent::mm34410a::dcvSystematicError $v "" [measure::config::get tcmm.nplc 10]]
    	
-   	# вычисляем и возвращаем температуру с инструментальной погрешностью
+   	# \u0432\u044B\u0447\u0438\u0441\u043B\u044F\u0435\u043C \u0438 \u0432\u043E\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443 \u0441 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430\u043B\u044C\u043D\u043E\u0439 \u043F\u043E\u0433\u0440\u0435\u0448\u043D\u043E\u0441\u0442\u044C\u044E
 	lassign [measure::thermocouple::calcKelvin \
         [measure::config::get tc.type K] \
         [measure::config::get tc.fixedT 77.4] \
@@ -242,19 +244,19 @@ proc readTempMm {} {
     return [list $t $tErr]
 }
 
-# Измеряем сопротивление и регистрируем его вместе с температурой
+# \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435 \u0438 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0435\u0433\u043E \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u043E\u0439
 proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { dotrace 1 } } {
     global log
     global settings connectors connectorIndex connectorStep vSwitches cSwitches tValues vValues cValues rValues EXTRAPOL measureComments refinedMeasureComments
 
-	# Измеряем напряжение
+	# \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435
 	lassign [measure::measure::resistance] v sv c sc r sr
 
-    # Выводим результаты в окно программы
+    # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043E\u043A\u043D\u043E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B
     display $v $sv $c $sc $r $sr $temp $tempErr $tempDer $write
 
     if { $write } {
-    	# Выводим результаты в результирующий файл
+    	# \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0438\u0440\u0443\u044E\u0449\u0438\u0439 \u0444\u0430\u0439\u043B
     	writeDataPoint $settings(result.fileName) $temp $tempErr $tempDer \
             $v $sv $c $sc $r $sr    \
             $manual [lindex $vSwitches $connectorIndex] [lindex $cSwitches $connectorIndex] \
@@ -269,9 +271,9 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
     }
     
     if { [llength $connectors] > 1 && $write } {
-        # отслеживаем переполюсовки
+        # \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0438
         if { $connectorStep == 0 } {
-            # записываем точку в файл с очищенными результатами
+            # \u0437\u0430\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u043C \u0442\u043E\u0447\u043A\u0443 \u0432 \u0444\u0430\u0439\u043B \u0441 \u043E\u0447\u0438\u0449\u0435\u043D\u043D\u044B\u043C\u0438 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u0430\u043C\u0438
         	lassign [refineDataPoint $tValues $vValues $temp $v $sv] refinedV refinedSV 
         	lassign [refineDataPoint $tValues $cValues $temp $c $sc] refinedC refinedSC 
         	lassign [refineDataPoint $tValues $rValues $temp $r $sr] refinedR refinedSR
@@ -311,44 +313,44 @@ proc resetConnectors { } {
     hardware::owen::mvu8::modbus::setChannels $settings(switch.serialAddr) $settings(switch.rs485Addr) 0 {0 0 0 0 0 0 0 0}
 }
 
-# Устанавливает положение переключателей полярности
+# \u0423\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442 \u043F\u043E\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0430\u0442\u0435\u043B\u0435\u0439 \u043F\u043E\u043B\u044F\u0440\u043D\u043E\u0441\u0442\u0438
 proc setConnectors { conns } {
     global settings
 
     if { $settings(current.method) != 3 } {
-    	# размыкаем цепь
+    	# \u0440\u0430\u0437\u043C\u044B\u043A\u0430\u0435\u043C \u0446\u0435\u043F\u044C
         hardware::owen::mvu8::modbus::setChannels $settings(switch.serialAddr) $settings(switch.rs485Addr) 4 {1000}
     	#after 500
     
-    	# производим переключение полярности
+    	# \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u043C \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043F\u043E\u043B\u044F\u0440\u043D\u043E\u0441\u0442\u0438
         hardware::owen::mvu8::modbus::setChannels $settings(switch.serialAddr) $settings(switch.rs485Addr) 0 $conns
     	#after 500
 
-    	# замыкаем цепь
+    	# \u0437\u0430\u043C\u044B\u043A\u0430\u0435\u043C \u0446\u0435\u043F\u044C
         hardware::owen::mvu8::modbus::setChannels $settings(switch.serialAddr) $settings(switch.rs485Addr) 4 {0}
     	#after 500
     } else {
-    	# в данном режиме цепь всегда разомкнута
+    	# \u0432 \u0434\u0430\u043D\u043D\u043E\u043C \u0440\u0435\u0436\u0438\u043C\u0435 \u0446\u0435\u043F\u044C \u0432\u0441\u0435\u0433\u0434\u0430 \u0440\u0430\u0437\u043E\u043C\u043A\u043D\u0443\u0442\u0430
         hardware::owen::mvu8::modbus::setChannels $settings(switch.serialAddr) $settings(switch.rs485Addr) 4 {1000}
     }
 }
 
-# конструирует имя файла для очищенных данных
+# \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u0438\u0440\u0443\u0435\u0442 \u0438\u043C\u044F \u0444\u0430\u0439\u043B\u0430 \u0434\u043B\u044F \u043E\u0447\u0438\u0449\u0435\u043D\u043D\u044B\u0445 \u0434\u0430\u043D\u043D\u044B\u0445
 proc refinedFileName { fn } {
     return "[file rootname $fn].refined[file extension $fn]"
 }
 
-# вычислим "очищенное" значение по нескольким предыдущим и текущему значению, полученному после переполюсовки
+# \u0432\u044B\u0447\u0438\u0441\u043B\u0438\u043C "\u043E\u0447\u0438\u0449\u0435\u043D\u043D\u043E\u0435" \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u0438\u043C \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u043C \u0438 \u0442\u0435\u043A\u0443\u0449\u0435\u043C\u0443 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044E, \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u043E\u043C\u0443 \u043F\u043E\u0441\u043B\u0435 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0438
 proc refineDataPoint { tValues values t v err } {
     global log
     set len [llength $values]
 
     if { $len > 0 } {
-        # в простейшем случае просто среднее арифметическое двух значений
+        # \u0432 \u043F\u0440\u043E\u0441\u0442\u0435\u0439\u0448\u0435\u043C \u0441\u043B\u0443\u0447\u0430\u0435 \u043F\u0440\u043E\u0441\u0442\u043E \u0441\u0440\u0435\u0434\u043D\u0435\u0435 \u0430\u0440\u0438\u0444\u043C\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u0434\u0432\u0443\u0445 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0439
         set prev [lindex $values end]
         
         if { $len > 1} {
-            # по двум предыдущим точкам определяем, какое могло бы быть значение при текущей температуре и прежней переполюсовке
+            # \u043F\u043E \u0434\u0432\u0443\u043C \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u043C \u0442\u043E\u0447\u043A\u0430\u043C \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u044F\u0435\u043C, \u043A\u0430\u043A\u043E\u0435 \u043C\u043E\u0433\u043B\u043E \u0431\u044B \u0431\u044B\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u0440\u0438 \u0442\u0435\u043A\u0443\u0449\u0435\u0439 \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0435 \u0438 \u043F\u0440\u0435\u0436\u043D\u0435\u0439 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0435
             set slope [::measure::math::slope $tValues $values]
             set prev [expr $prev + $slope * ($t - [lindex $tValues end])]
         }
@@ -361,7 +363,7 @@ proc refineDataPoint { tValues values t v err } {
     return [list $v $err]
 }
 
-# записывает точку в файл данных с попутным вычислением удельного сопротивления
+# \u0437\u0430\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u0442 \u0442\u043E\u0447\u043A\u0443 \u0432 \u0444\u0430\u0439\u043B \u0434\u0430\u043D\u043D\u044B\u0445 \u0441 \u043F\u043E\u043F\u0443\u0442\u043D\u044B\u043C \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435\u043C \u0443\u0434\u0435\u043B\u044C\u043D\u043E\u0433\u043E \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u044F
 proc writeDataPoint { fn temp tempErr tempDer v sv c sc r sr { manual 0 } { vPolarity "" } { cPolarity "" } { cfn "" } } {
     global $cfn
 
