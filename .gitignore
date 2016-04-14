@@ -38,3 +38,21 @@ assembly007/tclkit-8.5.8-win32.upx.exe
 box/scheme.pdf
 box/scheme.ps
 
+assembly006/doc/manual.pdf
+assembly007/doc/manual.synctex.gz
+
+box2/#scheme-test-ohm.sch#
+box2/#scheme-test-va.sch#
+box2/#scheme-test-vman.sch#
+box2/#scheme-test-vv.sch#
+box2/#scheme.sch#
+box2/notes.aux
+box2/notes.log
+box2/notes.out
+box2/notes.pdf
+box2/notes.synctex.gz
+box2/scheme-test-ohm.sch~
+box2/scheme-test-vv.sch~
+box2/scheme.pdf
+box2/scheme.ps
+box2/scheme.sch~
