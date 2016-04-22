@@ -183,7 +183,7 @@ if { $settings(switch.voltage) || $settings(switch.current) } {
     } "$settings(result.comment), [measure::measure::dutParams]"
 }
 
-measure::datafile::create $settings(trace.fileName) $settings(result.format) $settings(result.rewrite) {
+measure::datafile::create [measure::config::get trace.fileName] [measure::config::get result.format] [measure::config::get result.rewrite] {
 	"Date/Time" "T (K)" "dT/dt (K/min)" "R (Ohm)" 
 } "$settings(result.comment), [measure::measure::dutParams]"
 

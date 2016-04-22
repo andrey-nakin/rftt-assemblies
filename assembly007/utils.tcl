@@ -264,7 +264,7 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
     }
     
     if { $dotrace } {
-    	measure::datafile::write $settings(trace.fileName) [list \
+    	measure::datafile::write [measure::config::get trace.fileName] [list \
             TIMESTAMP \
             [format %0.3f $temp] [format %0.3f $tempDer] [format %0.6g $r]  \
         ]
