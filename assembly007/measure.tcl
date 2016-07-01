@@ -106,14 +106,21 @@ proc runTempStep {} {
 # \u041F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044E \u0434\u0430\u043D\u043D\u044B\u0445 \u043F\u043E \u043A\u043E\u043C\u0430\u043D\u0434\u0430\u043C \u043E\u043F\u0435\u0440\u0430\u0442\u043E\u0440\u0430
 proc runManual {} {
     global doMeasurement
+    global connectors connectorIndex connectorStep
 
     # \u0412\u044B\u043F\u043E\u043B\u043D\u044F\u0435\u043C \u0446\u0438\u043A\u043B \u043F\u043E\u043A\u0430 \u043D\u0435 \u043F\u0440\u0435\u0440\u0432\u0451\u0442 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C
     while { ![measure::interop::isTerminated] } {
-        # \u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443
-        lassign [readTemp] temp tempErr tempDer
+        set connectorStep 0
+        set connectorIndex 0
+        set n [expr { int([llength $connectors] * [measure::config::get switch.step 1]) }]
         
-        # \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435
-        readResistanceAndWrite $temp $tempErr $tempDer $doMeasurement $doMeasurement
+        for { set i 0 } { $i < $n && ![measure::interop::isTerminated] } { incr i } {
+            # \u0441\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u043C \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0443
+            lassign [readTemp] temp tempErr tempDer
+            
+            # \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435
+            readResistanceAndWrite $temp $tempErr $tempDer $doMeasurement $doMeasurement
+        } 
         
         after 500 set doMeasurement 0
         vwait doMeasurement
