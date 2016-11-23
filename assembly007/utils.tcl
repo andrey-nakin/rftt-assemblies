@@ -16,10 +16,10 @@ package require hardware::agilent::pse3645a
 package require hardware::owen::trm201
 
 # \u0427\u0438\u0441\u043B\u043E \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u0439, \u043F\u043E \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u044F\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u043D\u0430\u044F dT/dt
-set DERIVATIVE_READINGS 10
+set DERIVATIVE_READINGS 5
 
 # \u0427\u0438\u0441\u043B\u043E \u0442\u043E\u0447\u0435\u043A, \u043F\u043E \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u044D\u043A\u0441\u0442\u0440\u0430\u043F\u043E\u043B\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0438\u0437\u043C\u0435\u0440\u044F\u0435\u043C\u0430\u044F \u0432\u0435\u043B\u0438\u0447\u0438\u043D\u0430
-set EXTRAPOL 2
+set EXTRAPOL 100
 
 # \u041F\u0440\u043E\u0446\u0435\u0434\u0443\u0440\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A, \u043F\u0440\u0438 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E\u0441\u0442\u0438 \u0432\u043D\u043E\u0441\u0438\u0442 \u043F\u043E\u043F\u0440\u0430\u0432\u043A\u0438
 proc validateSettings {} {
@@ -270,40 +270,37 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
         ]
     }
     
-    if { [llength $connectors] > 1 && $write } {
-        # \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0438
-        if { $connectorStep == 0 } {
-            # \u0437\u0430\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u043C \u0442\u043E\u0447\u043A\u0443 \u0432 \u0444\u0430\u0439\u043B \u0441 \u043E\u0447\u0438\u0449\u0435\u043D\u043D\u044B\u043C\u0438 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u0430\u043C\u0438
-        	lassign [refineDataPoint $tValues $vValues $temp $v $sv] refinedV refinedSV 
-        	lassign [refineDataPoint $tValues $cValues $temp $c $sc] refinedC refinedSC 
-        	lassign [refineDataPoint $tValues $rValues $temp $r $sr] refinedR refinedSR
-             
-            display $refinedV $refinedSV $refinedC $refinedSC $refinedR $refinedSR $temp $tempErr $tempDer refined
-            
-        	writeDataPoint [refinedFileName $settings(result.fileName)] $temp $tempErr $tempDer \
-                $refinedV $refinedSV $refinedC $refinedSC $refinedR $refinedSR \
-                0 "" "" refinedMeasureComments   
-
-            set tValues {}; set vValues {}; set cValues {}; set rValues {}
-        }
-        
-        incr connectorStep
-        if { [measure::config::get switch.step 1] <= $connectorStep } {
-            set connectorStep 0
-            incr connectorIndex
-            if { $connectorIndex >= [llength $connectors] } {
-                set connectorIndex 0 
-            }
-            setConnectors [lindex $connectors $connectorIndex]
-            after [measure::config::get switch.delay 0]
-        }
-    }
-    
     if { $write } {
         ::measure::listutils::lappend tValues $temp $EXTRAPOL
         ::measure::listutils::lappend vValues $v $EXTRAPOL
         ::measure::listutils::lappend cValues $c $EXTRAPOL
         ::measure::listutils::lappend rValues $r $EXTRAPOL
+    }
+    
+    if { [llength $connectors] > 1 && $write } {
+        incr connectorStep
+        
+        if { [measure::config::get switch.step 1] <= $connectorStep } {
+            set connectorStep 0
+            incr connectorIndex
+            if { $connectorIndex >= [llength $connectors] } {
+            	lassign [refineDataPoint $tValues $vValues $temp $v $sv] refinedV refinedSV 
+            	lassign [refineDataPoint $tValues $cValues $temp $c $sc] refinedC refinedSC 
+            	lassign [refineDataPoint $tValues $rValues $temp $r $sr] refinedR refinedSR
+                 
+                display $refinedV $refinedSV $refinedC $refinedSC $refinedR $refinedSR $temp $tempErr $tempDer refined
+                
+            	writeDataPoint [refinedFileName $settings(result.fileName)] $temp $tempErr $tempDer \
+                    $refinedV $refinedSV $refinedC $refinedSC $refinedR $refinedSR \
+                    0 "" "" refinedMeasureComments   
+    
+                set tValues {}; set vValues {}; set cValues {}; set rValues {}
+            
+                set connectorIndex 0 
+            }
+            setConnectors [lindex $connectors $connectorIndex]
+            after [measure::config::get switch.delay 0]
+        }
     }
 }
 
@@ -347,16 +344,16 @@ proc refineDataPoint { tValues values t v err } {
 
     if { $len > 0 } {
         # \u0432 \u043F\u0440\u043E\u0441\u0442\u0435\u0439\u0448\u0435\u043C \u0441\u043B\u0443\u0447\u0430\u0435 \u043F\u0440\u043E\u0441\u0442\u043E \u0441\u0440\u0435\u0434\u043D\u0435\u0435 \u0430\u0440\u0438\u0444\u043C\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u0434\u0432\u0443\u0445 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0439
-        set prev [lindex $values end]
+        set v [lindex $values end]
         
         if { $len > 1} {
             # \u043F\u043E \u0434\u0432\u0443\u043C \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u043C \u0442\u043E\u0447\u043A\u0430\u043C \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u044F\u0435\u043C, \u043A\u0430\u043A\u043E\u0435 \u043C\u043E\u0433\u043B\u043E \u0431\u044B \u0431\u044B\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u0440\u0438 \u0442\u0435\u043A\u0443\u0449\u0435\u0439 \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0435 \u0438 \u043F\u0440\u0435\u0436\u043D\u0435\u0439 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0435
-            set slope [::measure::math::slope $tValues $values]
-            set prev [expr $prev + $slope * ($t - [lindex $tValues end])]
+            #set slope [::measure::math::slope $tValues $values]
+            #set dv [expr { $slope * ([lindex $tValues end] - [lindex $tValues 0]) }]
+            #set v [expr { [lindex $values 0] + $dv }]
+            set v [math::statistics::mean $values]
+            set err [::measure::sigma::add $err [math::statistics::stdev $values]] 
         }
-        
-        set err [::measure::sigma::add $err [expr abs(0.5 * ($prev - $v))] ] 
-        set v [expr 0.5 * ($prev + $v)]
     }
     
     # simply return given values by default
