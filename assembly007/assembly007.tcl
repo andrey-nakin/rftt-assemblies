@@ -281,7 +281,7 @@ set p [ttk::labelframe $w.nb.m.ctl -text " \u0423\u043F\u0440\u0430\u0432\u043B\
 pack $p -fill x -side bottom -padx 10 -pady 5
 
 grid [ttk::button $p.measure -text "\u0421\u043D\u044F\u0442\u044C \u0442\u043E\u0447\u043A\u0443" -state disabled -command makeMeasurement -image ::img::next -compound left] -row 0 -column 0 -sticky w
-grid [ttk::checkbutton $p.suspend1 -state disabled -style Toolbutton -text "Приостановить запись"] -row 0 -column 1 -sticky w
+grid [ttk::checkbutton $p.suspend1 -image ::img::pause -compound left -style Toolbutton -state disabled -text "Приостановить запись"] -row 0 -column 1 -sticky w
 grid [ttk::entry $p.comment -textvariable measureComment] -row 0 -column 2 -sticky we
 grid [ttk::button $p.addComment -text "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0439" -state disabled -command addComment -compound left] -row 0 -column 3 -sticky w
 grid [ttk::button $p.stop -text "\u041E\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0437\u0430\u043F\u0438\u0441\u044C" -command terminateMeasure -state disabled -image ::img::stop -compound left] -row 0 -column 4 -sticky e
