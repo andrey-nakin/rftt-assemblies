@@ -7,6 +7,7 @@
 
 package provide a007::utils 2.0.1
 
+package require Thread
 package require hardware::agilent::mm34410a
 package require hardware::owen::mvu8
 package require measure::thermocouple
@@ -406,7 +407,12 @@ proc writeDataPoint { fn temp tempErr tempDer v sv c sc r sr { manual 0 } { vPol
         set comment $cmt
         unset $cfn 
     }
-    
+ 
+    if { [tsv::exists measure suspendWrite] && [tsv::get measure suspendWrite] != 0 } {
+		# write operation is suspended by user
+        return
+    }
+   
 	measure::datafile::write $fn [list \
         TIMESTAMP [format %0.3f $temp] [format %0.3f $tempErr] [format %0.3f $tempDer]  \
         [format %0.6g $c] [format %0.2g $sc]    \
