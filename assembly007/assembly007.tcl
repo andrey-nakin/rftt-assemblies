@@ -281,14 +281,15 @@ set p [ttk::labelframe $w.nb.m.ctl -text " \u0423\u043F\u0440\u0430\u0432\u043B\
 pack $p -fill x -side bottom -padx 10 -pady 5
 
 grid [ttk::button $p.measure -text "\u0421\u043D\u044F\u0442\u044C \u0442\u043E\u0447\u043A\u0443" -state disabled -command makeMeasurement -image ::img::next -compound left] -row 0 -column 0 -sticky w
-grid [ttk::entry $p.comment -textvariable measureComment] -row 0 -column 1 -sticky we
-grid [ttk::button $p.addComment -text "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0439" -state disabled -command addComment -compound left] -row 0 -column 2 -sticky w
-grid [ttk::button $p.stop -text "\u041E\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0437\u0430\u043F\u0438\u0441\u044C" -command terminateMeasure -state disabled -image ::img::stop -compound left] -row 0 -column 3 -sticky e
-grid [ttk::button $p.start -text "\u041D\u0430\u0447\u0430\u0442\u044C \u0437\u0430\u043F\u0438\u0441\u044C" -command startMeasure -image ::img::start -compound left] -row 0 -column 4 -sticky e
+grid [ttk::checkbutton $p.suspend1 -state disabled -style Toolbutton -text "Приостановить запись"] -row 0 -column 1 -sticky w
+grid [ttk::entry $p.comment -textvariable measureComment] -row 0 -column 2 -sticky we
+grid [ttk::button $p.addComment -text "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0439" -state disabled -command addComment -compound left] -row 0 -column 3 -sticky w
+grid [ttk::button $p.stop -text "\u041E\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u0437\u0430\u043F\u0438\u0441\u044C" -command terminateMeasure -state disabled -image ::img::stop -compound left] -row 0 -column 4 -sticky e
+grid [ttk::button $p.start -text "\u041D\u0430\u0447\u0430\u0442\u044C \u0437\u0430\u043F\u0438\u0441\u044C" -command startMeasure -image ::img::start -compound left] -row 0 -column 5 -sticky e
 
-grid columnconfigure $p { 1 3 4 } -pad 10
-grid columnconfigure $p { 0 2 } -pad 50
-grid columnconfigure $p { 1 } -weight 1
+grid columnconfigure $p { 0 2 4 5 } -pad 10
+grid columnconfigure $p { 1 3 } -pad 50
+grid columnconfigure $p { 2 } -weight 1
 grid rowconfigure $p { 0 1 } -pad 5
 
 # \u0420\u0430\u0437\u0434\u0435\u043B "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0438\u0437\u043C\u0435\u0440\u0435\u043D\u0438\u044F"
@@ -326,8 +327,8 @@ set chartR_T [canvas $p.r_T -width 200 -height 200]
 grid $chartR_T -row 0 -column 0 -sticky news
 measure::chart::staticChart -xlabel "T, \u041A" -ylabel "R, \u041E\u043C" -dots 1 -lines 1 $chartR_T
 measure::chart::${chartR_T}::series test -order 1 -maxCount 10 -color #7f7fff
+measure::chart::${chartR_T}::series refined -order 3 -maxCount 200 -thinout -color blue
 measure::chart::${chartR_T}::series result -order 2 -maxCount 200 -thinout -color green
-measure::chart::${chartR_T}::series refined -order 2 -maxCount 200 -thinout -color blue
 
 set chartR_t [canvas $p.r_t -width 200 -height 200]
 grid $chartR_t -row 0 -column 1 -sticky news

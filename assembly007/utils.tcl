@@ -43,7 +43,7 @@ proc validateSettings {} {
 
 # \u0418\u043D\u0438\u0446\u0438\u0430\u043B\u0438\u0437\u0430\u0446\u0438\u044F \u043F\u0440\u0438\u0431\u043E\u0440\u043E\u0432
 proc setup {} {
-    global ps tcmm log trm connectors connectorIndex connectorStep vSwitches cSwitches tValues vValues cValues rValues
+    global ps tcmm log trm connectors connectorIndex connectorStep vSwitches cSwitches 
 
     # \u0418\u043D\u0438\u0446\u0438\u0430\u043B\u0438\u0437\u0430\u0446\u0438\u044F \u043C\u0443\u043B\u044C\u0442\u0438\u043C\u0435\u0442\u0440\u043E\u0432 \u043D\u0430 \u043E\u0431\u0440\u0430\u0437\u0446\u0435
     measure::measure::setupMmsForResistance
@@ -120,10 +120,15 @@ proc setup {} {
     }
     set connectorIndex 0
     set connectorStep 0
-    set tValues {}
-    set vValues {}
-    set cValues {}
-    set rValues {}
+    
+    resetRefinedVars
+}
+
+proc resetRefinedVars {} {
+    global tValues tErrValues vValues vErrValues cValues cErrValues rValues rErrValues
+    
+    set tValues {}; set tErrValues {}; set vValues {}; set vErrValues {}
+    set cValues {}; set cErrValues {}; set rValues {}; set rErrValues {}
 }
 
 # \u0417\u0430\u0432\u0435\u0440\u0448\u0430\u0435\u043C \u0440\u0430\u0431\u043E\u0442\u0443 \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0438, \u043C\u0430\u0442\u0447\u0430\u0441\u0442\u044C \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0435.
@@ -247,7 +252,9 @@ proc readTempMm {} {
 # \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u0435 \u0438 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u0443\u0435\u043C \u0435\u0433\u043E \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u043E\u0439
 proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { dotrace 1 } } {
     global log
-    global settings connectors connectorIndex connectorStep vSwitches cSwitches tValues vValues cValues rValues EXTRAPOL measureComments refinedMeasureComments
+    global settings connectors connectorIndex connectorStep vSwitches cSwitches 
+    global tValues tErrValues vValues vErrValues cValues cErrValues rValues rErrValues EXTRAPOL 
+    global measureComments refinedMeasureComments
 
 	# \u0418\u0437\u043C\u0435\u0440\u044F\u0435\u043C \u043D\u0430\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435
 	lassign [measure::measure::resistance] v sv c sc r sr
@@ -272,9 +279,13 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
     
     if { $write } {
         ::measure::listutils::lappend tValues $temp $EXTRAPOL
+        ::measure::listutils::lappend tErrValues $tempErr $EXTRAPOL
         ::measure::listutils::lappend vValues $v $EXTRAPOL
+        ::measure::listutils::lappend vErrValues $sv $EXTRAPOL
         ::measure::listutils::lappend cValues $c $EXTRAPOL
+        ::measure::listutils::lappend cErrValues $sc $EXTRAPOL
         ::measure::listutils::lappend rValues $r $EXTRAPOL
+        ::measure::listutils::lappend rErrValues $sr $EXTRAPOL
     }
     
     if { [llength $connectors] > 1 && $write } {
@@ -284,18 +295,17 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
             set connectorStep 0
             incr connectorIndex
             if { $connectorIndex >= [llength $connectors] } {
-            	lassign [refineDataPoint $tValues $vValues $temp $v $sv] refinedV refinedSV 
-            	lassign [refineDataPoint $tValues $cValues $temp $c $sc] refinedC refinedSC 
-            	lassign [refineDataPoint $tValues $rValues $temp $r $sr] refinedR refinedSR
+            	lassign [refineDataPoint $tValues $tErrValues $vValues $vErrValues] refinedT refinedTErr refinedV refinedVErr 
+            	lassign [refineDataPoint $tValues $tErrValues $cValues $cErrValues] refinedT refinedTErr refinedC refinedCErr 
+            	lassign [refineDataPoint $tValues $tErrValues $rValues $rErrValues] refinedT refinedRErr refinedR refinedRErr 
                  
-                display $refinedV $refinedSV $refinedC $refinedSC $refinedR $refinedSR $temp $tempErr $tempDer refined
+                display $refinedV $refinedVErr $refinedC $refinedCErr $refinedR $refinedRErr $refinedT $refinedTErr $tempDer refined
                 
-            	writeDataPoint [refinedFileName $settings(result.fileName)] $temp $tempErr $tempDer \
-                    $refinedV $refinedSV $refinedC $refinedSC $refinedR $refinedSR \
+            	writeDataPoint [refinedFileName $settings(result.fileName)] $refinedT $refinedTErr $tempDer \
+                    $refinedV $refinedVErr $refinedC $refinedCErr $refinedR $refinedRErr \
                     0 "" "" refinedMeasureComments   
     
-                set tValues {}; set vValues {}; set cValues {}; set rValues {}
-            
+                resetRefinedVars
                 set connectorIndex 0 
             }
             setConnectors [lindex $connectors $connectorIndex]
@@ -337,27 +347,41 @@ proc refinedFileName { fn } {
     return "[file rootname $fn].refined[file extension $fn]"
 }
 
-# \u0432\u044B\u0447\u0438\u0441\u043B\u0438\u043C "\u043E\u0447\u0438\u0449\u0435\u043D\u043D\u043E\u0435" \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u043E \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u0438\u043C \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u043C \u0438 \u0442\u0435\u043A\u0443\u0449\u0435\u043C\u0443 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044E, \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u043E\u043C\u0443 \u043F\u043E\u0441\u043B\u0435 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0438
-proc refineDataPoint { tValues values t v err } {
+proc refineDataPoint { tValues tErrValues values errValues } {
     global log
     set len [llength $values]
 
-    if { $len > 0 } {
-        # \u0432 \u043F\u0440\u043E\u0441\u0442\u0435\u0439\u0448\u0435\u043C \u0441\u043B\u0443\u0447\u0430\u0435 \u043F\u0440\u043E\u0441\u0442\u043E \u0441\u0440\u0435\u0434\u043D\u0435\u0435 \u0430\u0440\u0438\u0444\u043C\u0435\u0442\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u0434\u0432\u0443\u0445 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0439
-        set v [lindex $values end]
-        
-        if { $len > 1} {
-            # \u043F\u043E \u0434\u0432\u0443\u043C \u043F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u043C \u0442\u043E\u0447\u043A\u0430\u043C \u043E\u043F\u0440\u0435\u0434\u0435\u043B\u044F\u0435\u043C, \u043A\u0430\u043A\u043E\u0435 \u043C\u043E\u0433\u043B\u043E \u0431\u044B \u0431\u044B\u0442\u044C \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043F\u0440\u0438 \u0442\u0435\u043A\u0443\u0449\u0435\u0439 \u0442\u0435\u043C\u043F\u0435\u0440\u0430\u0442\u0443\u0440\u0435 \u0438 \u043F\u0440\u0435\u0436\u043D\u0435\u0439 \u043F\u0435\u0440\u0435\u043F\u043E\u043B\u044E\u0441\u043E\u0432\u043A\u0435
-            #set slope [::measure::math::slope $tValues $values]
-            #set dv [expr { $slope * ([lindex $tValues end] - [lindex $tValues 0]) }]
-            #set v [expr { [lindex $values 0] + $dv }]
-            set v [math::statistics::mean $values]
-            set err [::measure::sigma::add $err [math::statistics::stdev $values]] 
+    # special case #1    
+    if { $len == 0 } {
+        return {0 0 0 0}
+    }
+
+    # special case #2
+    if { $len == 1 } {
+        return [list [lindex $tValues 0] [lindex $tErrValues 0] [lindex $values 0] [lindex $errValues 0] ]
+    }
+
+    lassign [::math::statistics::basic-stats $tValues] tMean _ _ _ tStd
+    lassign [::math::statistics::basic-stats $values] mean _ _ _ std
+    # average errors
+    set tAvgErr [::math::statistics::mean $tErrValues]
+    set avgErr [::math::statistics::mean $errValues]
+    # cumulative errors
+    set tCumErr [::measure::sigma::add $tAvgErr $tStd]
+    set cumErr [::measure::sigma::add $avgErr $std] 
+    
+    # try using linear approximation
+    if { ![catch { set res [::math::statistics::linear-model $tValues $values] }] } {
+        lassign $res a b ystd r2 degree aErr aP bErr bP
+        if { $r2 > 0.5 } {
+            # approximation is good enough
+            set v [expr { $a + $b * $tMean }]
+            return [list $tMean $tCumErr $v $cumErr ]
         }
     }
-    
-    # simply return given values by default
-    return [list $v $err]
+
+    # default logic
+    return [list $tMean $tCumErr $mean $cumErr ]
 }
 
 # \u0437\u0430\u043F\u0438\u0441\u044B\u0432\u0430\u0435\u0442 \u0442\u043E\u0447\u043A\u0443 \u0432 \u0444\u0430\u0439\u043B \u0434\u0430\u043D\u043D\u044B\u0445 \u0441 \u043F\u043E\u043F\u0443\u0442\u043D\u044B\u043C \u0432\u044B\u0447\u0438\u0441\u043B\u0435\u043D\u0438\u0435\u043C \u0443\u0434\u0435\u043B\u044C\u043D\u043E\u0433\u043E \u0441\u043E\u043F\u0440\u043E\u0442\u0438\u0432\u043B\u0435\u043D\u0438\u044F
