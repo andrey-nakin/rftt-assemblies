@@ -5,7 +5,7 @@
 # Tester module
 ###############################################################################
 
-package provide a007::tester 2.0.1
+package provide a007::tester 2.1.0
 
 package require measure::logger
 package require measure::config

@@ -5,7 +5,7 @@
 # Common utils
 ###############################################################################
 
-package provide a007::utils 2.0.1
+package provide a007::utils 2.1.0
 
 package require Thread
 package require hardware::agilent::mm34410a

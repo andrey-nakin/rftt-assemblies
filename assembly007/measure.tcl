@@ -5,7 +5,7 @@
 # Measurement module
 ###############################################################################
 
-package provide a007::measure 2.0.1
+package provide a007::measure 2.1.0
 
 package require math::statistics
 package require http 2.7
