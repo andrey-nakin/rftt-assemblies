@@ -236,34 +236,27 @@ proc toggleSuspend {} {
 # \u041E\u0431\u0440\u0430\u0431\u043E\u0442\u0447\u0438\u043A\u0438 \u0441\u043E\u0431\u044B\u0442\u0438\u0439
 ###############################################################################
 
-proc display { v sv c sc r sr temp tempErr tempDer write } {
+proc display { v sv c sc r sr temp tempErr tempDer what disp } {
     global runtime chartR_T chartR_t chartT_t chartdT_t w
     
-    if { $write == "refined" } {
-        # \u043E\u0447\u0438\u0449\u0435\u043D\u043D\u0430\u044F \u0442\u043E\u0447\u043A\u0430 - \u0432\u044B\u0432\u043E\u0434\u0438\u043C \u0442\u043E\u043B\u044C\u043A\u043E \u043D\u0430 \u0433\u0440\u0430\u0444\u0438\u043A\u0435
-    	measure::chart::${chartR_T}::addPoint $temp $r refined
-    	return
+    if { $disp } {
+        # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043E\u043A\u043D\u043E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B
+    	set runtime(temperature) [::measure::format::valueWithErr -- $temp $tempErr "\u041A"]
+    	set runtime(derivative1) [::measure::format::value -prec 3 -- $tempDer "\u041A/\u043C\u0438\u043D"]
+    	set runtime(current) [::measure::format::valueWithErr -mult 1.0e-3 -- $c $sc "\u0410"]
+    	set runtime(voltage) [::measure::format::valueWithErr -mult 1.0e-3 -- $v $sv "\u0412"]
+    	set runtime(resistance) [::measure::format::valueWithErr -- $r $sr "\u03A9"]
+    	set runtime(power) [::measure::format::value -prec 2 -- [expr 1.0e-6 * $c * $v] "\u0412\u0442"]
+    
+    	measure::chart::${chartR_t}::setYErr $sr
+    	measure::chart::${chartR_t}::addPoint $r
+        measure::chart::${chartT_t}::addPoint $temp
+    	measure::chart::${chartdT_t}::addPoint $tempDer
+
+    	event generate ${w}. <<ReadTemperature>> -data $temp
     }
     
-    # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043E\u043A\u043D\u043E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B
-	set runtime(temperature) [::measure::format::valueWithErr -- $temp $tempErr "\u041A"]
-	set runtime(derivative1) [::measure::format::value -prec 3 -- $tempDer "\u041A/\u043C\u0438\u043D"]
-	set runtime(current) [::measure::format::valueWithErr -mult 1.0e-3 -- $c $sc "\u0410"]
-	set runtime(voltage) [::measure::format::valueWithErr -mult 1.0e-3 -- $v $sv "\u0412"]
-	set runtime(resistance) [::measure::format::valueWithErr -- $r $sr "\u03A9"]
-	set runtime(power) [::measure::format::value -prec 2 -- [expr 1.0e-6 * $c * $v] "\u0412\u0442"]
-
-	measure::chart::${chartR_t}::setYErr $sr
-	measure::chart::${chartR_t}::addPoint $r
-    measure::chart::${chartT_t}::addPoint $temp
-	measure::chart::${chartdT_t}::addPoint $tempDer
-	if { $write } {
-    	measure::chart::${chartR_T}::addPoint $temp $r result
-    } else {
-    	measure::chart::${chartR_T}::addPoint $temp $r test
-    }
-
-	event generate ${w}. <<ReadTemperature>> -data $temp
+   	measure::chart::${chartR_T}::addPoint $temp $r $what
 }
 
 ###############################################################################

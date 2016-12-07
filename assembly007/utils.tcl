@@ -22,8 +22,6 @@ set DERIVATIVE_READINGS 5
 # \u0427\u0438\u0441\u043B\u043E \u0442\u043E\u0447\u0435\u043A, \u043F\u043E \u043A\u043E\u0442\u043E\u0440\u044B\u043C \u044D\u043A\u0441\u0442\u0440\u0430\u043F\u043E\u043B\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0438\u0437\u043C\u0435\u0440\u044F\u0435\u043C\u0430\u044F \u0432\u0435\u043B\u0438\u0447\u0438\u043D\u0430
 set EXTRAPOL 100
 
-set MIN_R2 0.99
-
 # \u041F\u0440\u043E\u0446\u0435\u0434\u0443\u0440\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0435\u0442 \u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0441\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043A, \u043F\u0440\u0438 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E\u0441\u0442\u0438 \u0432\u043D\u043E\u0441\u0438\u0442 \u043F\u043E\u043F\u0440\u0430\u0432\u043A\u0438
 proc validateSettings {} {
     measure::config::validate {
@@ -179,7 +177,7 @@ proc finish {} {
 	after 1000
 }
 
-proc display { v sv c sc r sr temp tempErr tempDer write } {
+proc display { v sv c sc r sr temp tempErr tempDer what disp } {
 	if { [measure::interop::isAlone] } {
 	    # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043A\u043E\u043D\u0441\u043E\u043B\u044C
     	set cv [::measure::format::valueWithErr -mult 1.0e-3 $c $sc A]
@@ -190,7 +188,7 @@ proc display { v sv c sc r sr temp tempErr tempDer write } {
     	puts "C=$cv\tV=$vv\tR=$rv\tP=$pw\tT=$tv"
 	} else {
 	    # \u0412\u044B\u0432\u043E\u0434\u0438\u043C \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u044B \u0432 \u043E\u043A\u043D\u043E \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B
-        measure::interop::cmd [list display $v $sv $c $sc $r $sr $temp $tempErr $tempDer $write]
+        measure::interop::cmd [list display $v $sv $c $sc $r $sr $temp $tempErr $tempDer $what $disp]
 	}
 }
 
@@ -290,6 +288,8 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
 
     if ($write) {    
         if { [llength $connectors] > 1} {
+            display $v $sv $c $sc $r $sr $temp $tempErr $tempDer result 1
+             
             incr connectorStep
             
             if { [measure::config::get switch.step 1] <= $connectorStep } {
@@ -300,7 +300,7 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
                 	lassign [refineDataPoint $tValues $tErrValues $cValues $cErrValues] refinedT refinedTErr refinedC refinedCErr 
                 	lassign [refineDataPoint $tValues $tErrValues $rValues $rErrValues] refinedT refinedRErr refinedR refinedRErr 
                      
-                    display $refinedV $refinedVErr $refinedC $refinedCErr $refinedR $refinedRErr $refinedT $refinedTErr $tempDer refined
+                    display $refinedV $refinedVErr $refinedC $refinedCErr $refinedR $refinedRErr $refinedT $refinedTErr $tempDer refined 0
                     
                 	writeDataPoint [refinedFileName $settings(result.fileName)] $refinedT $refinedTErr $tempDer \
                         $refinedV $refinedVErr $refinedC $refinedCErr $refinedR $refinedRErr \
@@ -312,13 +312,11 @@ proc readResistanceAndWrite { temp tempErr tempDer { write 0 } { manual 0 } { do
                 setConnectors [lindex $connectors $connectorIndex]
                 after [measure::config::get switch.delay 0]
             }
-
-            display $v $sv $c $sc $r $sr $temp $tempErr $tempDer $write
         } else {
-            display $v $sv $c $sc $r $sr $temp $tempErr $tempDer refined
+            display $v $sv $c $sc $r $sr $temp $tempErr $tempDer refined 1
         }
     } else {
-        display $v $sv $c $sc $r $sr $temp $tempErr $tempDer $write
+        display $v $sv $c $sc $r $sr $temp $tempErr $tempDer test 1
     }
 }
 
@@ -376,19 +374,7 @@ proc refineDataPoint { tValues tErrValues values errValues } {
     set avgErr [::math::statistics::mean $errValues]
     # cumulative errors
     set tCumErr [::measure::sigma::add $tAvgErr $tStd]
-    set cumErr [::measure::sigma::add $avgErr $std] 
-    
-    # try using linear approximation
-    if { ![catch { set res [::math::statistics::linear-model $tValues $values] }] } {
-        lassign $res a b ystd r2 degree aErr aP bErr bP
-        if { $r2 > $MIN_R2 } {
-            # approximation is good enough
-            set v [expr { $a + $b * $tMean }]
-            return [list $tMean $tCumErr $v $cumErr ]
-        }
-    }
-
-    # default logic
+    set cumErr [::measure::sigma::add $avgErr $std]
     return [list $tMean $tCumErr $mean $cumErr ]
 }
 
