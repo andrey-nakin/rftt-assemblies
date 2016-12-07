@@ -347,8 +347,8 @@ set chartR_T [canvas $p.r_T -width 200 -height 200]
 grid $chartR_T -row 0 -column 0 -sticky news
 measure::chart::staticChart -xlabel "T, \u041A" -ylabel "R, \u041E\u043C" -dots 1 -lines 1 $chartR_T
 measure::chart::${chartR_T}::series test -order 1 -maxCount 10 -color #7f7fff
-measure::chart::${chartR_T}::series refined -order 3 -maxCount 200 -thinout -color blue
-measure::chart::${chartR_T}::series result -order 2 -maxCount 200 -thinout -color green
+measure::chart::${chartR_T}::series refined -order 2 -maxCount 200 -thinout -color green
+measure::chart::${chartR_T}::series result -order 3 -maxCount 200 -thinout -color blue
 
 set chartR_t [canvas $p.r_t -width 200 -height 200]
 grid $chartR_t -row 0 -column 1 -sticky news
