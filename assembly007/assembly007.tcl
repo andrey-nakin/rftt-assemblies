@@ -5,7 +5,7 @@
 # Main module
 ###############################################################################
 
-package provide app-assembly007 2.1.0
+package provide app-assembly007 2.2.0
 
 package require Tcl 8.5
 package require Tk 8.5
