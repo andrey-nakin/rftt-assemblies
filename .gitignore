@@ -1,3 +1,7 @@
+**/*.log
+**/*.ini
+**/*.exe
+
 assembly001/doc/connector.pdf
 assembly001/doc/connector.ps
 assembly001/result.txt
@@ -21,8 +25,8 @@ assembly007/assembly007.exe
 assembly007/assembly007.ini
 assembly007/assembly007.kit
 assembly007/assembly007.log
-assembly007/assembly007.vfs/
 assembly007/cyr2uc.tcl
+assembly007/manual.pdf
 assembly007/doc/manual.aux
 assembly007/doc/manual.log
 assembly007/doc/manual.out
@@ -37,6 +41,8 @@ assembly007/tclkit-8.5.8-win32-x86_64.exe
 assembly007/tclkit-8.5.8-win32.upx.exe
 box/scheme.pdf
 box/scheme.ps
+box2/labels.odt
+box2/labels.pdf
 
 assembly006/doc/manual.pdf
 assembly007/doc/manual.synctex.gz
@@ -56,3 +62,12 @@ box2/scheme-test-vv.sch~
 box2/scheme.pdf
 box2/scheme.ps
 box2/scheme.sch~
+
+assembly007/assembly007.vfs/lib/tclvisa0.3.0/License.rtf
+assembly007/assembly007.vfs/lib/tclvisa0.3.0/license.terms
+assembly007/assembly007.vfs/lib/tclvisa0.3.0/tclvisa030.dll
+assembly007/assembly007.vfs/lib/tclvisa0.3.0/pkgIndex.tcl
+assembly007/assembly007.vfs/lib/tclvisa0.3.0/doc/*
+assembly007/assembly007.vfs/lib/tclvisa0.3.0/demo/*
+
+commons/doc/dut/geometry.log
