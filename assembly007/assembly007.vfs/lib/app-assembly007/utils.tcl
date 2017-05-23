@@ -408,9 +408,9 @@ proc writeDataPoint { fn temp tempErr tempDer v sv c sc r sr { manual 0 } { vPol
    
 	measure::datafile::write $fn [list \
         TIMESTAMP [format %0.3f $temp] [format %0.3f $tempErr] [format %0.3f $tempDer]  \
-        [format %0.6g $c] [format %0.2g $sc]    \
-        [format %0.6g $v] [format %0.2g $sv]    \
-        [format %0.6g $r] [format %0.2g $sr]    \
+        [format %#.6g $c] [format %#.2g $sc]    \
+        [format %#.6g $v] [format %#.2g $sv]    \
+        [format %#.6g $r] [format %#.2g $sr]    \
         $rho $rhoErr  \
         $manual $vPolarity $cPolarity \
         $comment ]
