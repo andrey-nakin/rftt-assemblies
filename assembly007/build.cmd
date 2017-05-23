@@ -7,5 +7,7 @@ cd doc
 pdflatex manual.tex
 cd ..
 
-7z a assembly007-%APP_VERSION%-win32.zip assembly007.exe
-7z a assembly007-%APP_VERSION%-win32.zip doc/manual.pdf
+set ARCHIVE=assembly007-%APP_VERSION%-win32.zip
+erase %ARCHIVE% 
+7z a %ARCHIVE% assembly007.exe
+7z a %ARCHIVE% doc/manual.pdf
