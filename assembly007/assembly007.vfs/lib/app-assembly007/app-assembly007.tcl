@@ -7,9 +7,9 @@
 
 package provide app-assembly007 2.2.0
 
-package require Tcl 8.5
-package require Tk 8.5
-package require Ttk 8.5
+package require Tcl
+package require Tk
+package require Ttk
 package require Plotchart
 package require Thread
 package require inifile
